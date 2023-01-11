@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String    @id @default(uuid())
+  firstName               String
+  lastName                String?
+  contactNo               String    @unique
+  email                   String    @unique
+  password                String
+  role                    Role      @default(BASIC)
+  status                  Status    @default(ACTIVE)
+  gender                  Gender?
+  dob                     DateTime?
+  addresses               Address[]
+  profileImage            String?
+  profileImageId          String?
+  verificationToken       String?
+  isVerified              Boolean   @default(false)
+  verified                DateTime?
+  authorized              Boolean   @default(false)
+  passwordToken           String?
+  passwordTokenExpiration DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  Token                   Token?
+  wishList                Product[]
+  productReviews          Review[]
+
+  @@index([email, contactNo])
+}
+
+model Address {
+  id        String      @id @default(uuid())
+  address   String
+  city      String
+  pincode   Int
+  state     String
+  country   String      @default("India")
+  type      AddressType @default(HOME)
+  isPrimary Boolean     @default(false)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId    String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Token {
+  id           String   @id @default(uuid())
+  refreshToken String
+  ip           String
+  userAgent    String
+  isValid      Boolean  @default(true)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId       String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Product {
+  id             String       @id @default(uuid())
+  name           String       @unique
+  price          Float
+  discount       DiscountType @default(PERCENTAGE)
+  discountAmount Float?
+  image          String
+  imageId        String
+  sizes          Size[]
+  category       Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  categoryId     String
+  featured       Boolean      @default(false)
+  color          String
+  description    String
+  inventory      Int          @default(0)
+  averageRating  Float        @default(0)
+  numOfReviews   Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  wishListedBy   User[]
+  userReviews    Review[]
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId    String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  productId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+}
+
+model Size {
+  id        String    @id @default(uuid())
+  value     Int       @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Coupon {
+  id               String       @id @default(uuid())
+  type             DiscountType @default(PERCENTAGE)
+  amount           Float
+  code             String       @unique
+  startTime        DateTime     @default(now())
+  expiryTime       DateTime
+  valid            Boolean      @default(true)
+  maxRedemptions   Int
+  totalRedemptions Int          @default(0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model ReturnReason {
+  id        String   @id @default(uuid())
+  title     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  BASIC
+  ADMIN
+}
+
+enum Status {
+  ACTIVE
+  LOCKED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum AddressType {
+  HOME
+  OFFICE
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
